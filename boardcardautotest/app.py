@@ -45,46 +45,59 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.resize(QSize(MAINWINDOW_W, MAINWINDOW_H))
         self.setWindowTitle(__appname__)
 
-        self.show_image = None
+        self.image = None
+        self.post_qimage = None
         self.cap = cv.VideoCapture()  # 视频流
         self.CAM_NUM = 0
 
-        # 输出重定向到 textbrowser
+
+        # ----------------------- 菜单栏 -----------------------
+        menubar = self.menuBar()
+        
+        self.mufiles = menubar.addMenu('Files(&F)')
+        muopenimagedir = QtWidgets.QAction('OpenImage(&I)', self)
+        muopenimagedir.setShortcut('I')
+        # muopenimagedir.triggered.connect(self.open_image_dir)
+        self.mufiles.addAction(muopenimagedir)
+
+        self.muedit = menubar.addMenu('Edit(&E)')
+        # ----------------------- end -----------------------
+        
+        # ----------------------- 输出重定向到 textbrowser -----------------------
         sys.stdout = EmittingStr()
         sys.stdout.textWritten.connect(self.outputWritten)
         sys.stderr = EmittingStr()
         sys.stderr.textWritten.connect(self.outputWritten)
+        # ----------------------- end -----------------------
 
-        # 日志输出
+        # ----------------------- 日志输出 -----------------------
         self.log_dock_widget = LogDockWidget()
         self.addDockWidget(Qt.RightDockWidgetArea, self.log_dock_widget)
+        # ----------------------- end -----------------------
 
-        # 菜单栏
-        menubar = self.menuBar()
-        self.mufiles = menubar.addMenu('Files(&F)')
-        self.muedit = menubar.addMenu('Edit(&E)')
-        
-        muopenimagedir = QtWidgets.QAction('OpenImage(&I)', self)
-        muopenimagedir.setShortcut('I')
-        # self.muopenimagedir.triggered.connect(self.open_image_dir)
-        self.mufiles.addAction(muopenimagedir)
-
-        # 展示视频帧
+        # ----------------------- 展示视频帧 -----------------------
         self.show_video_dock_widget = ShowVideoDockWidget()
         self.addDockWidget(Qt.LeftDockWidgetArea, self.show_video_dock_widget)
+        # ----------------------- end -----------------------
 
-        # 展示捕获图像 以子窗口形式
+        # ----------------------- 展示捕获图像 以子窗口形式 -----------------------
         self.show_image_widget = ShowImageWidget()
+        # ----------------------- end -----------------------
 
-        # 按钮
+        # ----------------------- 按钮 -----------------------
         self.button_dock_Widget = ButtonDockWidget()
         self.addDockWidget(Qt.RightDockWidgetArea, self.button_dock_Widget)
         self.button_dock_Widget.buttonwidget.button_open_camera.clicked.connect(self.button_open_camera_clicked)
         self.button_dock_Widget.buttonwidget.button_capture_image.clicked.connect(self.button_capture_image_clicked)
+        self.button_dock_Widget.buttonwidget.button_ocr_detection.clicked.connect(self.ocr_auto_detection)
+        self.button_dock_Widget.buttonwidget.button_binary_image.clicked.connect(self.show_binary_image)
+        self.button_dock_Widget.buttonwidget.slider_for_binary_image.valueChanged.connect(self.valueChange_for_binary_image)
+        # ----------------------- end -----------------------
         
-        # 定时器，用于控制显示视频的帧率
+        # ----------------------- 定时器 用于控制显示视频的帧率 -----------------------
         self.timer_camera = QtCore.QTimer()
-        self.timer_camera.timeout.connect(self.show_camera)  # 若定时器结束，则调用show_camera()
+        self.timer_camera.timeout.connect(self.camera_image_process)  # 若定时器结束，则调用show_camera()
+        # ----------------------- end -----------------------
 
     def outputWritten(self, text):
         cursor = self.log_dock_widget.textBrowser.textCursor()
@@ -111,14 +124,32 @@ class MainWindow(QtWidgets.QMainWindow):
             self.button_dock_Widget.buttonwidget.button_open_camera.setText('Open Camera')
             print("===> Close Camera...")
  
-    def show_camera(self):
+    def camera_image_process(self):
         _, self.image = self.cap.read()  # 从视频流中读取
+        image_copy = deepcopy(self.image)
         scale = round(self.height() / max(self.image.shape[0], self.image.shape[1]), 1)
-        show = cv.cvtColor(self.image, cv.COLOR_BGR2RGB)  # 视频色彩转换回RGB，这样才是现实的颜色
-        self.show_image = QtGui.QImage(show.data, show.shape[1], show.shape[0], QtGui.QImage.Format_RGB888)  # 把读取到的视频数据变成 QImage 形式
+        
+        if self.button_dock_Widget.buttonwidget.button_binary_image.isChecked():
+            image_gray = cv.cvtColor(image_copy, cv.COLOR_BGR2GRAY)
+            th = self.button_dock_Widget.buttonwidget.slider_for_binary_image.value()
+            _, image_copy = cv.threshold(image_gray, th, 255, cv.THRESH_BINARY) # cv.THRESH_BINARY+cv.THRESH_OTSU
+        
+        if len(image_copy.shape) == 3:
+            image_rgb = cv.cvtColor(image_copy, cv.COLOR_BGR2RGB)  # 视频色彩转换回 RGB，这样才是现实的颜色
+            self.post_qimage = QtGui.QImage(image_rgb.data, image_rgb.shape[1], image_rgb.shape[0], QtGui.QImage.Format_RGB888)  # 把读取到的视频数据变成 QImage 形式
+        else:
+            self.post_qimage = QtGui.QImage(image_copy.data, image_copy.shape[1], image_copy.shape[0], QtGui.QImage.Format_Indexed8)
+        
         self.show_video_dock_widget.show_area.setPixmap(
-            QtGui.QPixmap.fromImage(self.show_image).scaled(
+            QtGui.QPixmap.fromImage(self.post_qimage).scaled(
                 self.image.shape[1]*scale, self.image.shape[0]*scale))  # 往显示视频的 Label 里显示 QImage
+
+        if self.button_dock_Widget.buttonwidget.button_ocr_detection.isChecked():
+            # 开始对捕获的图像执行 OCR 检测
+            # print("===> image_copy shape: ", image_copy.shape)
+            orc_txt = ocr_processor(image_copy)
+            if orc_txt.rstrip():
+                print("===> OCR detection result: ", orc_txt)
 
     def closeEvent(self, event):
         a = QtWidgets.QMessageBox.question(self, '是否退出', '确定要退出吗?', 
@@ -132,12 +163,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def button_capture_image_clicked(self):
         if self.cap.isOpened():
-            self.show_image_widget.setPixmap(QtGui.QPixmap.fromImage(self.show_image))
+            self.show_image_widget.setPixmap(QtGui.QPixmap.fromImage(self.post_qimage))
             self.show_image_widget.show()
             print("===> Capture Image...")
-            # 开始对捕获的图像执行 OCR 检测
-            orc_txt = ocr_processor(self.image)
-            print("===> OCR detection result: ", orc_txt)
+            # # 开始对捕获的图像执行 OCR 检测
+            # orc_txt = ocr_processor(self.image)
+            # print("===> OCR detection result: ", orc_txt)
+
+    def ocr_auto_detection(self):
+        if self.button_dock_Widget.buttonwidget.button_ocr_detection.isChecked():
+            print("===> Opening OCR auto Detection...")
+        else:
+            print("===> closed OCR auto Detection...")
+
+    def show_binary_image(self):
+        if self.button_dock_Widget.buttonwidget.button_binary_image.isChecked():
+            print("===> Show Binary Image...")
+        else:
+            pass
+
+    def valueChange_for_binary_image(self):
+        print("===> Current Value: {}".format(self.button_dock_Widget.buttonwidget.slider_for_binary_image.value()))
 
 
 class ButtonWidget(QtWidgets.QWidget):
@@ -147,11 +193,23 @@ class ButtonWidget(QtWidgets.QWidget):
         spacer_item = QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         
         self.button_open_camera = QtWidgets.QPushButton("Open Camera", self)
-
         self.button_capture_image = QtWidgets.QPushButton("Capture Image", self)
+        self.button_ocr_detection = QtWidgets.QCheckBox("OCR Auto Detection", self)
+        self.button_binary_image = QtWidgets.QCheckBox("Show Binary Image", self)
+        
+        self.slider_for_binary_image = QtWidgets.QSlider(Qt.Horizontal)
+        self.slider_for_binary_image.setMinimum(0) # 设置最小值
+        self.slider_for_binary_image.setMaximum(255) # 设置最大值
+        self.slider_for_binary_image.setSingleStep(5)   # 步长
+        self.slider_for_binary_image.setValue(127)   # 设置当前值
+        self.slider_for_binary_image.setTickPosition(QtWidgets.QSlider.TicksBelow)  # 设置刻度的位置， 刻度在下方
+        self.slider_for_binary_image.setTickInterval(5) # 设置刻度的间隔
 
         layout = QtWidgets.QVBoxLayout()
         layout.addSpacerItem(spacer_item)
+        layout.addWidget(self.button_ocr_detection, 2)
+        layout.addWidget(self.button_binary_image, 2)
+        layout.addWidget(self.slider_for_binary_image, 2)
         layout.addWidget(self.button_open_camera, 2)
         layout.addWidget(self.button_capture_image, 2)
         self.setLayout(layout)
@@ -200,16 +258,17 @@ class ShowImageWidget(QtWidgets.QWidget):
     def __init__(self):
         super(ShowImageWidget, self).__init__()
         self.setWindowTitle("Capture Image")
+        self.pixmap = QtGui.QPixmap()
         self.scale = 1
-        self.point = QtCore.QPoint(0, 0)
-        self.start_pos = None
-        self.end_pos = None
-        self.current_point_x = 0
-        self.current_point_y = 0
-        self.left_click = False     # 左键被点击
-        self.right_click = False    # 右键被点击
-        self.painter = QtGui.QPainter() # 设置画笔
-        self.setMouseTracking(True)     # 设置鼠标跟踪(不需要按下就可跟踪)
+        self.point = QtCore.QPoint(0, 0)            # 记录图像左上角点在显示框的位置坐标
+        self.start_pos = QtCore.QPoint(0, 0)        # 记录鼠标点击坐标
+        self.end_pos = QtCore.QPoint(0, 0)          # 记录拖动图像的偏移量
+        self.current_point = QtCore.QPoint(0, 0)    # 记录当前(实时)鼠标位置坐标
+        self.image_pos = QtCore.QPoint(0, 0)        # 记录点击点在图像上的真实坐标
+        self.left_click = False             # 左键被点击
+        self.right_click = False            # 右键被点击
+        self.painter = QtGui.QPainter()     # 设置画笔
+        self.setMouseTracking(True)         # 设置鼠标跟踪(不需要按下就可跟踪)
     
     def setPixmap(self, pixmap):
         self.pixmap = pixmap
@@ -219,15 +278,17 @@ class ShowImageWidget(QtWidgets.QWidget):
         if event.buttons() == Qt.LeftButton:
             self.left_click = True
             self.start_pos = event.pos()
-            print(f"===> Clicked left mouse: ({event.pos().x()}, {event.pos().y()})")
+            self.image_pos = self.start_pos / self.scale - self.point
+            print(f"===> Clicked left mouse: [{event.pos().x()}, {event.pos().y()}]")
 
         if event.buttons() == Qt.RightButton:
             self.right_click = True
             self.start_pos = event.pos()
-            print(f"===> Clicked right mouse: ({event.pos().x()}, {event.pos().y()})")
+            self.image_pos = self.start_pos / self.scale - self.point
+            print(f"===> Clicked right mouse: [{event.pos().x()}, {event.pos().y()}]")
         
-        print("===> scale: ", self.scale)
-        print("===> image_posion: ", int(self.current_point_x/self.scale-self.point.x()), int(self.current_point_y/self.scale-self.point.y()))
+        print(f"===> Scales: [{round(self.scale, 3)}]", )
+        print(f"===> Image Posion: [{int(self.image_pos.x())}, {int(self.image_pos.y())}]")
         self.update()
 
     def mouseReleaseEvent(self, event):
@@ -238,9 +299,7 @@ class ShowImageWidget(QtWidgets.QWidget):
     
     def mouseMoveEvent(self, event):
         # self.hasMouseTracking()
-        self.current_point_x = event.pos().x()
-        self.current_point_y = event.pos().y()
-        # print("===> current_point: ", self.current_point_x, self.current_point_y)
+        self.current_point = event.pos()
         self.update()
         if self.left_click:
             self.end_pos = event.pos() - self.start_pos
@@ -250,17 +309,17 @@ class ShowImageWidget(QtWidgets.QWidget):
     
     def paintEvent(self, event):
         self.painter.begin(self)
-        
-        self.painter.scale(self.scale, self.scale)
-        self.painter.drawPixmap(self.point, self.pixmap)
+        if self.pixmap:            
+            self.painter.scale(self.scale, self.scale)
+            self.painter.drawPixmap(self.point, self.pixmap)
 
-        self.painter.setPen(QtGui.QPen(Qt.red, 1, Qt.DashLine))
-        # 对于鼠标, 只有缩放因子影响鼠标的真实坐标
-        # 对于图像, 缩放因子和平移因子共同影响图像的真实坐标
-        self.painter.drawLine(self.current_point_x/self.scale, 0, self.current_point_x/self.scale, self.height()/self.scale)  # 竖直线
-        self.painter.drawLine(0, self.current_point_y/self.scale, self.width()/self.scale, self.current_point_y/self.scale)  # 水平线
-        if self.right_click:
-            pass
+            self.painter.setPen(QtGui.QPen(Qt.red, 1, Qt.DashLine))
+            # 对于鼠标, 只有缩放因子影响鼠标的真实坐标
+            # 对于图像, 缩放因子和平移因子共同影响图像的真实坐标
+            self.painter.drawLine(self.current_point.x()/self.scale, 0, self.current_point.x()/self.scale, self.height()/self.scale)  # 竖直线
+            self.painter.drawLine(0, self.current_point.y()/self.scale, self.width()/self.scale, self.current_point.y()/self.scale)  # 水平线
+            if self.right_click:
+                pass
 
         self.painter.end()
         self.update()
