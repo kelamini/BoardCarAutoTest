@@ -107,17 +107,17 @@ class MainWindow(QtWidgets.QMainWindow):
             self.cap.release()  # 释放视频流
             self.show_video_dock_widget.show_area.clear()  # 清空视频显示区域
             self.show_video_dock_widget.show_area.setText("Video Show")    # 显示文字
-            self.show_video_dock_widget.show_area.setAlignment(Qt.AlignCenter)  # 居中
-            self.show_video_dock_widget.show_area.setFont(QtGui.QFont("Times New Roman", 30, QtGui.QFont.Bold)) # 设置字体格式
             self.button_dock_Widget.buttonwidget.button_open_camera.setText('Open Camera')
             print("===> Close Camera...")
  
     def show_camera(self):
         _, self.image = self.cap.read()  # 从视频流中读取
-        show = cv.resize(self.image, (self.show_video_dock_widget.width(), self.show_video_dock_widget.height()))
-        show = cv.cvtColor(show, cv.COLOR_BGR2RGB)  # 视频色彩转换回RGB，这样才是现实的颜色
+        scale = round(self.height() / max(self.image.shape[0], self.image.shape[1]), 1)
+        show = cv.cvtColor(self.image, cv.COLOR_BGR2RGB)  # 视频色彩转换回RGB，这样才是现实的颜色
         self.show_image = QtGui.QImage(show.data, show.shape[1], show.shape[0], QtGui.QImage.Format_RGB888)  # 把读取到的视频数据变成 QImage 形式
-        self.show_video_dock_widget.show_area.setPixmap(QtGui.QPixmap.fromImage(self.show_image))  # 往显示视频的 Label 里显示 QImage
+        self.show_video_dock_widget.show_area.setPixmap(
+            QtGui.QPixmap.fromImage(self.show_image).scaled(
+                self.image.shape[1]*scale, self.image.shape[0]*scale))  # 往显示视频的 Label 里显示 QImage
 
     def closeEvent(self, event):
         a = QtWidgets.QMessageBox.question(self, '是否退出', '确定要退出吗?', 
@@ -180,15 +180,16 @@ class ShowVideoDockWidget(QtWidgets.QDockWidget):
         super(ShowVideoDockWidget, self).__init__()
         self.show_area = QtWidgets.QLabel()
         self.show_area.setText("Video Show")    # 显示文字
-        self.show_area.setFixedSize(self.width(), self.height())
-        self.show_area.setAlignment(Qt.AlignCenter)  # 居中
-        self.show_area.setFont(QtGui.QFont("Times New Roman", 30, QtGui.QFont.Bold)) # 设置字体格式
+        # self.show_area.setFixedSize(size_w, size_h)
 
-        pe = QtGui.QPalette()
-        # pe.setColor(QtGui.QPalette.WindowText, Qt.red)
-        pe.setColor(QtGui.QPalette.Background, QtGui.QColor('#ffffd0'))
-        self.show_area.setPalette(pe)
-        self.show_area.setAutoFillBackground(True)
+        # self.show_area.setScaledContents(True)
+        self.show_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.show_area.setStyleSheet("""
+                                        background-color: #808080;
+                                        color: #CC7443;
+                                        font-family: Titillium;
+                                        font-size: 60px;
+                                        """)
 
         self.setWidget(self.show_area)
         self.setWindowTitle("Videos")
@@ -198,13 +199,13 @@ class ShowImageWidget(QtWidgets.QWidget):
     def __init__(self):
         super(ShowImageWidget, self).__init__()        
         self.show_area = QtWidgets.QLabel()
-        self.show_area.setFixedSize(self.width(), self.height())
-        self.show_area.setAutoFillBackground(False)
+        self.show_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.show_area)
         
         self.setLayout(layout)
+        self.setWindowTitle("Capture Image")
     
     def mousePressEvent(self, event):
         if event.buttons() == Qt.LeftButton:
