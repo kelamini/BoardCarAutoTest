@@ -143,17 +143,14 @@ class ButtonWidget(QtWidgets.QWidget):
     def __init__(self):
         super(ButtonWidget, self).__init__()
         # self.switch_button = SwitchButton()
-        self.camera_status = False
-        self.cap = None
+        spacer_item = QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         
         self.button_open_camera = QtWidgets.QPushButton("Open Camera", self)
-        # self.button_1.clicked.connect(self.camera_status_change)
 
         self.button_capture_image = QtWidgets.QPushButton("Capture Image", self)
-        # self.button_2.clicked.connect(self.capture_image)
 
         layout = QtWidgets.QVBoxLayout()
-        # layout.addWidget(self.switch_button, 2)
+        layout.addSpacerItem(spacer_item)
         layout.addWidget(self.button_open_camera, 2)
         layout.addWidget(self.button_capture_image, 2)
         self.setLayout(layout)
@@ -167,6 +164,7 @@ class ButtonDockWidget(QtWidgets.QDockWidget):
         super(ButtonDockWidget, self).__init__()
         self.buttonwidget = ButtonWidget()
         self.setWidget(self.buttonwidget)
+        self.setWindowTitle("Buttons")
 
 
 class LogDockWidget(QtWidgets.QDockWidget):
@@ -174,6 +172,7 @@ class LogDockWidget(QtWidgets.QDockWidget):
         super(LogDockWidget, self).__init__()
         self.textBrowser = QtWidgets.QTextBrowser()
         self.setWidget(self.textBrowser)
+        self.setWindowTitle("Logs")
 
 
 class ShowVideoDockWidget(QtWidgets.QDockWidget):
@@ -192,6 +191,7 @@ class ShowVideoDockWidget(QtWidgets.QDockWidget):
         self.show_area.setAutoFillBackground(True)
 
         self.setWidget(self.show_area)
+        self.setWindowTitle("Videos")
 
 
 class ShowImageWidget(QtWidgets.QWidget):
