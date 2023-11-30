@@ -9,6 +9,7 @@ import typing
 import webbrowser
 import glob
 import json
+from copy import deepcopy
 
 import cv2 as cv
 
@@ -131,7 +132,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def button_capture_image_clicked(self):
         if self.cap.isOpened():
-            self.show_image_widget.show_area.setPixmap(QtGui.QPixmap.fromImage(self.show_image))
+            self.show_image_widget.setPixmap(QtGui.QPixmap.fromImage(self.show_image))
             self.show_image_widget.show()
             print("===> Capture Image...")
             # 开始对捕获的图像执行 OCR 检测
@@ -197,31 +198,83 @@ class ShowVideoDockWidget(QtWidgets.QDockWidget):
 
 class ShowImageWidget(QtWidgets.QWidget):
     def __init__(self):
-        super(ShowImageWidget, self).__init__()        
-        self.show_area = QtWidgets.QLabel()
-        self.show_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.show_area)
-        
-        self.setLayout(layout)
+        super(ShowImageWidget, self).__init__()
         self.setWindowTitle("Capture Image")
+        self.scale = 1
+        self.point = QtCore.QPoint(0, 0)
+        self.start_pos = None
+        self.end_pos = None
+        self.current_point_x = 0
+        self.current_point_y = 0
+        self.left_click = False     # 左键被点击
+        self.right_click = False    # 右键被点击
+        self.painter = QtGui.QPainter() # 设置画笔
+        self.setMouseTracking(True)     # 设置鼠标跟踪(不需要按下就可跟踪)
     
+    def setPixmap(self, pixmap):
+        self.pixmap = pixmap
+        self.update()
+
     def mousePressEvent(self, event):
         if event.buttons() == Qt.LeftButton:
-            self.pos_visual = 1
-            # self.current_pos = [event.pos().x()-self.left_point, event.pos().y()-self.top_point]
+            self.left_click = True
+            self.start_pos = event.pos()
             print(f"===> Clicked left mouse: ({event.pos().x()}, {event.pos().y()})")
-            self.update()
 
         if event.buttons() == Qt.RightButton:
-            self.pos_visual = 0
-            # self.current_pos = [event.pos().x()-self.left_point, event.pos().y()-self.top_point]
+            self.right_click = True
+            self.start_pos = event.pos()
             print(f"===> Clicked right mouse: ({event.pos().x()}, {event.pos().y()})")
-            self.update()
+        
+        print("===> scale: ", self.scale)
+        print("===> image_posion: ", int(self.current_point_x/self.scale-self.point.x()), int(self.current_point_y/self.scale-self.point.y()))
+        self.update()
 
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.left_click = False
+        if event.button() == Qt.RightButton:
+            self.right_click = False
+    
+    def mouseMoveEvent(self, event):
+        # self.hasMouseTracking()
+        self.current_point_x = event.pos().x()
+        self.current_point_y = event.pos().y()
+        # print("===> current_point: ", self.current_point_x, self.current_point_y)
+        self.update()
+        if self.left_click:
+            self.end_pos = event.pos() - self.start_pos
+            self.point = self.point + self.end_pos
+            self.start_pos = event.pos()
+            self.repaint()
+    
     def paintEvent(self, event):
-        pass
+        self.painter.begin(self)
+        
+        self.painter.scale(self.scale, self.scale)
+        self.painter.drawPixmap(self.point, self.pixmap)
+
+        self.painter.setPen(QtGui.QPen(Qt.red, 1, Qt.DashLine))
+        # 对于鼠标, 只有缩放因子影响鼠标的真实坐标
+        # 对于图像, 缩放因子和平移因子共同影响图像的真实坐标
+        self.painter.drawLine(self.current_point_x/self.scale, 0, self.current_point_x/self.scale, self.height()/self.scale)  # 竖直线
+        self.painter.drawLine(0, self.current_point_y/self.scale, self.width()/self.scale, self.current_point_y/self.scale)  # 水平线
+        if self.right_click:
+            pass
+
+        self.painter.end()
+        self.update()
+
+    def wheelEvent(self, event):
+        angle = event.angleDelta() / 8  # 返回QPoint对象，为滚轮转过的数值，单位为1/8度
+        angleY = angle.y()
+        # 获取当前鼠标相对于view的位置
+        if angleY > 0:
+            self.scale *= 1.1
+        else:  # 滚轮下滚
+            self.scale *= 0.9
+        self.adjustSize()
+        self.update()
 
 
 class SwitchButton(QtWidgets.QWidget):
