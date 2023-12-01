@@ -23,9 +23,6 @@ def obt_roi(image):
 
 
 def ocr_processor(image):
-    if len(image.shape) > 2:
-        image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-        _, image = cv.threshold(image, 0, 255, cv.THRESH_BINARY+cv.THRESH_OTSU)
     return pytesseract.image_to_string(image, lang='eng')
 
 
