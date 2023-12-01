@@ -191,8 +191,9 @@ class MainWindow(QtWidgets.QMainWindow):
         print("===> Current Value: {}\n".format(self.button_dock_Widget.buttonwidget.spinbox_for_binary_image.value()))
 
     def set_default_directory(self):
-        self.save_default_dir = QtWidgets.QFileDialog.getExistingDirectory(None, "Please select directory", os.getcwd())
-        print(f"===> Set Save Directory: '{self.save_default_dir}'")
+        if not self.cap.isOpened():
+            self.save_default_dir = QtWidgets.QFileDialog.getExistingDirectory(None, "Please select directory", os.getcwd())
+            print(f"===> Set Save Directory: '{self.save_default_dir}'")
 
     def save_image(self):
         if self.save_default_dir:
@@ -225,15 +226,6 @@ class ButtonWidget(QtWidgets.QWidget):
         self.button_horizontal_image = QtWidgets.QRadioButton("Horizontal Image", self)
         self.button_vertical_image = QtWidgets.QRadioButton("Vertical Image", self)
         self.button_hv_image = QtWidgets.QRadioButton("H V Image", self)
-        flip_hlayout_1 = QtWidgets.QHBoxLayout()
-        flip_hlayout_1.addWidget(self.button_original_image)
-        flip_hlayout_1.addWidget(self.button_hv_image)
-        flip_hlayout_2 = QtWidgets.QHBoxLayout()
-        flip_hlayout_2.addWidget(self.button_vertical_image)
-        flip_hlayout_2.addWidget(self.button_horizontal_image)
-        flip_vlayout = QtWidgets.QVBoxLayout()
-        flip_vlayout.addLayout(flip_hlayout_1)
-        flip_vlayout.addLayout(flip_hlayout_2)
 
         # check box
         self.checkbox_ocr_detection = QtWidgets.QCheckBox("OCR Auto Detection", self)
@@ -255,6 +247,17 @@ class ButtonWidget(QtWidgets.QWidget):
         self.spinbox_for_binary_image.setMaximum(255)   # 设置最大值
         
         # -------------------------- 布局 --------------------------
+        # flip image
+        flip_hlayout_1 = QtWidgets.QHBoxLayout()
+        flip_hlayout_1.addWidget(self.button_original_image)
+        flip_hlayout_1.addWidget(self.button_hv_image)
+        flip_hlayout_2 = QtWidgets.QHBoxLayout()
+        flip_hlayout_2.addWidget(self.button_vertical_image)
+        flip_hlayout_2.addWidget(self.button_horizontal_image)
+        flip_vlayout = QtWidgets.QVBoxLayout()
+        flip_vlayout.addLayout(flip_hlayout_1)
+        flip_vlayout.addLayout(flip_hlayout_2)
+        
         # binary image
         binary_image_layout = QtWidgets.QHBoxLayout()
         binary_image_layout.addWidget(self.checkbox_binary_image)
