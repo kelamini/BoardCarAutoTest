@@ -5,8 +5,7 @@ import shlex
 import subprocess
 import sys
 
-from setuptools import find_packages
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def get_version():
@@ -26,6 +25,7 @@ def get_install_requires():
         "imgviz>=0.11",
         "matplotlib<3.3",  # for PyInstaller
         "opencv_python<4.3.0",
+        "opencv_contrib_python<4.3.0",
         "numpy",
         "Pillow>=2.8",
         "PyYAML",
@@ -33,6 +33,7 @@ def get_install_requires():
         "termcolor",
         "requests",
         "scipy",
+        "mediapipe"
     ]
 
     if os.name == "nt":  # Windows
@@ -102,7 +103,7 @@ def main():
             "Programming Language :: Python :: Implementation :: CPython",
             "Programming Language :: Python :: Implementation :: PyPy",
         ],
-        package_data={"boardcardautotest": ["icons/*"]},
+        package_data={"boardcardautotest": ["icons/*", "models/*"]},
         entry_points={
             "console_scripts": [
                 "boardcardautotest=boardcardautotest.main:main",

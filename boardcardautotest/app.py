@@ -12,7 +12,8 @@ from qtpy.QtCore import Qt, QRect
 from qtpy import QtGui
 from qtpy import QtWidgets
 
-from .utils import ocr_processor
+from .ocr_detection import ocr_processor
+from .object_detection import object_detection
 
 from boardcardautotest import __appname__
 
@@ -54,12 +55,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.muedit = menubar.addMenu('Edit(&E)')
         # ----------------------- end -----------------------
-        
+
         # ----------------------- 输出重定向到 textbrowser -----------------------
-        sys.stdout = EmittingStr()
-        sys.stdout.textWritten.connect(self.outputWritten)
-        sys.stderr = EmittingStr()
-        sys.stderr.textWritten.connect(self.outputWritten)
+        # sys.stdout = EmittingStr()
+        # sys.stdout.textWritten.connect(self.outputWritten)
+        # sys.stderr = EmittingStr()
+        # sys.stderr.textWritten.connect(self.outputWritten)
         # ----------------------- end -----------------------
 
         # ----------------------- 日志输出 -----------------------
@@ -142,6 +143,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.post_image = cv.flip(self.post_image, 0)
         elif self.button_dock_Widget.buttonwidget.button_hv_image.isChecked():
             self.post_image = cv.flip(self.post_image, -1)
+        
+        # 执行目标检测
+        if self.button_dock_Widget.buttonwidget.checkbox_object_detection.isChecked():
+            th = self.button_dock_Widget.buttonwidget.spinbox_for_object_detection.value()
+            self.post_image = object_detection(self.image, th)
 
         # 转换到二值图
         if self.button_dock_Widget.buttonwidget.checkbox_binary_image.isChecked():
@@ -165,6 +171,7 @@ class MainWindow(QtWidgets.QMainWindow):
             orc_txt = ocr_processor(self.image)
             if orc_txt.rstrip():
                 print("===> OCR detection result: \n", orc_txt)
+
 
     def capture_image_clicked(self):
         if self.cap.isOpened():
@@ -230,6 +237,7 @@ class ButtonWidget(QtWidgets.QWidget):
         # check box
         self.checkbox_ocr_detection = QtWidgets.QCheckBox("OCR Auto Detection", self)
         self.checkbox_binary_image = QtWidgets.QCheckBox("Show Binary Image", self)
+        self.checkbox_object_detection = QtWidgets.QCheckBox("Object Detection", self)
 
         # # slider
         # self.slider_for_binary_image = QtWidgets.QSlider(Qt.Horizontal)
@@ -240,12 +248,19 @@ class ButtonWidget(QtWidgets.QWidget):
         # self.slider_for_binary_image.setTickPosition(QtWidgets.QSlider.TicksBelow)  # 设置刻度的位置， 刻度在下方
         # self.slider_for_binary_image.setTickInterval(5) # 设置刻度的间隔
 
-        # spin box
+        # ---------------------------- spin box ----------------------------
+        # binary image
         self.spinbox_for_binary_image = QtWidgets.QSpinBox()
         self.spinbox_for_binary_image.setValue(127)     # 设置当前值
         self.spinbox_for_binary_image.setMinimum(0)     # 设置最小值
         self.spinbox_for_binary_image.setMaximum(255)   # 设置最大值
-        
+        # object_detection
+        self.spinbox_for_object_detection = QtWidgets.QSpinBox()
+        self.spinbox_for_object_detection.setValue(50)     # 设置当前值
+        self.spinbox_for_object_detection.setMinimum(0)     # 设置最小值
+        self.spinbox_for_object_detection.setMaximum(100)   # 设置最大值
+        # ---------------------------- end ----------------------------
+
         # -------------------------- 布局 --------------------------
         # flip image
         flip_hlayout_1 = QtWidgets.QHBoxLayout()
@@ -263,11 +278,17 @@ class ButtonWidget(QtWidgets.QWidget):
         binary_image_layout.addWidget(self.checkbox_binary_image)
         binary_image_layout.addWidget(self.spinbox_for_binary_image)
 
+        # object_detection
+        object_detection_layout = QtWidgets.QHBoxLayout()
+        object_detection_layout.addWidget(self.checkbox_object_detection)
+        object_detection_layout.addWidget(self.spinbox_for_object_detection)
+
         # global
         global_layout = QtWidgets.QVBoxLayout()
         global_layout.addSpacerItem(spacer_item)
         global_layout.addLayout(flip_vlayout, 2)
         global_layout.addWidget(self.checkbox_ocr_detection, 2)
+        global_layout.addLayout(object_detection_layout, 2)
         global_layout.addLayout(binary_image_layout, 2)
         global_layout.addWidget(self.button_set_save_dir, 2)
         global_layout.addWidget(self.button_open_camera, 2)
