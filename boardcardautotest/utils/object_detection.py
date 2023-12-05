@@ -15,7 +15,7 @@ TEXT_COLOR = (255, 255, 0)  # red
 here = osp.dirname(osp.abspath(__file__))
 
 
-def visualize(image, detection_result):
+def visualize_object(image, detection_result):
   """Draws bounding boxes on the input image and return it.
   Args:
     image: The input RGB image.
@@ -44,22 +44,18 @@ def visualize(image, detection_result):
 
 
 def object_detection(cv_image, th):
-    # STEP 2: Create an ObjectDetector object.
-    model_path = osp.join(here, "./models", "efficientdet_lite0.tflite")
+    model_path = osp.join(here, "../models", "efficientdet_lite0.tflite")
     base_options = python.BaseOptions(model_asset_path=model_path)
     options = vision.ObjectDetectorOptions(base_options=base_options,
                                         score_threshold=th/100)
     detector = vision.ObjectDetector.create_from_options(options)
 
-    # STEP 3: Load the input image.
-    image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv_image)
     # image = mp.Image.create_from_file(image)
+    image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv_image)
 
-    # STEP 4: Detect objects in the input image.
     detection_result = detector.detect(image)
 
-    # STEP 5: Process the detection result. In this case, visualize it.
-    image_copy = np.copy(image.numpy_view())
-    annotated_image = visualize(image_copy, detection_result)
-    # cv2_imshow(rgb_annotated_image)
-    return annotated_image
+    # image_copy = np.copy(image.numpy_view())
+    # annotated_image = visualize(image_copy, detection_result)
+
+    return detection_result

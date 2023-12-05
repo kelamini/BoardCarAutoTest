@@ -12,8 +12,9 @@ from qtpy.QtCore import Qt, QRect
 from qtpy import QtGui
 from qtpy import QtWidgets
 
-from .ocr_detection import ocr_processor
-from .object_detection import object_detection
+from .utils import ocr_processor
+from .utils import object_detection, visualize_object
+from .utils import face_detection, visualize_face
 
 from boardcardautotest import __appname__
 
@@ -57,10 +58,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # ----------------------- end -----------------------
 
         # ----------------------- 输出重定向到 textbrowser -----------------------
-        # sys.stdout = EmittingStr()
-        # sys.stdout.textWritten.connect(self.outputWritten)
-        # sys.stderr = EmittingStr()
-        # sys.stderr.textWritten.connect(self.outputWritten)
+        sys.stdout = EmittingStr()
+        sys.stdout.textWritten.connect(self.outputWritten)
+        sys.stderr = EmittingStr()
+        sys.stderr.textWritten.connect(self.outputWritten)
         # ----------------------- end -----------------------
 
         # ----------------------- 日志输出 -----------------------
@@ -134,6 +135,19 @@ class MainWindow(QtWidgets.QMainWindow):
         _, self.image = self.cap.read()
         self.post_image = deepcopy(self.image)
 
+        # 执行目标检测
+        if self.button_dock_Widget.buttonwidget.checkbox_object_detection.isChecked():
+            th = self.button_dock_Widget.buttonwidget.spinbox_for_object_detection_th.value()
+            detection_result = object_detection(self.image, th)
+            self.post_image = visualize_object(self.post_image, detection_result)
+
+        # 执行人脸检测
+        if self.button_dock_Widget.buttonwidget.checkbox_face_detection.isChecked():
+            conf = self.button_dock_Widget.buttonwidget.spinbox_for_face_detection_conf.value()
+            th = self.button_dock_Widget.buttonwidget.spinbox_for_face_detection_th.value()
+            detection_result = face_detection(self.image, conf, th)
+            self.post_image = visualize_face(self.post_image, detection_result)
+
         # 翻转图像
         if self.button_dock_Widget.buttonwidget.button_original_image.isChecked():
             self.post_image = self.post_image
@@ -143,11 +157,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.post_image = cv.flip(self.post_image, 0)
         elif self.button_dock_Widget.buttonwidget.button_hv_image.isChecked():
             self.post_image = cv.flip(self.post_image, -1)
-        
-        # 执行目标检测
-        if self.button_dock_Widget.buttonwidget.checkbox_object_detection.isChecked():
-            th = self.button_dock_Widget.buttonwidget.spinbox_for_object_detection.value()
-            self.post_image = object_detection(self.image, th)
 
         # 转换到二值图
         if self.button_dock_Widget.buttonwidget.checkbox_binary_image.isChecked():
@@ -222,6 +231,12 @@ class ButtonWidget(QtWidgets.QWidget):
         # 弹簧
         spacer_item = QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
 
+        # label
+        self.label_for_binary_image_th = QtWidgets.QLabel("Th: ", self)
+        self.label_for_object_detection_th = QtWidgets.QLabel("Th: ", self)
+        self.label_for_face_detection_conf = QtWidgets.QLabel("Conf: ", self)
+        self.label_for_face_detection_th = QtWidgets.QLabel("Th: ", self)
+
         # push button
         self.button_open_camera = QtWidgets.QPushButton("Open Camera", self)
         self.button_capture_image = QtWidgets.QPushButton("Capture Image", self)
@@ -238,6 +253,7 @@ class ButtonWidget(QtWidgets.QWidget):
         self.checkbox_ocr_detection = QtWidgets.QCheckBox("OCR Auto Detection", self)
         self.checkbox_binary_image = QtWidgets.QCheckBox("Show Binary Image", self)
         self.checkbox_object_detection = QtWidgets.QCheckBox("Object Detection", self)
+        self.checkbox_face_detection = QtWidgets.QCheckBox("Face Detection", self)
 
         # # slider
         # self.slider_for_binary_image = QtWidgets.QSlider(Qt.Horizontal)
@@ -254,11 +270,20 @@ class ButtonWidget(QtWidgets.QWidget):
         self.spinbox_for_binary_image.setValue(127)     # 设置当前值
         self.spinbox_for_binary_image.setMinimum(0)     # 设置最小值
         self.spinbox_for_binary_image.setMaximum(255)   # 设置最大值
-        # object_detection
-        self.spinbox_for_object_detection = QtWidgets.QSpinBox()
-        self.spinbox_for_object_detection.setValue(50)     # 设置当前值
-        self.spinbox_for_object_detection.setMinimum(0)     # 设置最小值
-        self.spinbox_for_object_detection.setMaximum(100)   # 设置最大值
+        # object detection
+        self.spinbox_for_object_detection_th = QtWidgets.QSpinBox()
+        self.spinbox_for_object_detection_th.setValue(50)     # 设置当前值
+        self.spinbox_for_object_detection_th.setMinimum(0)     # 设置最小值
+        self.spinbox_for_object_detection_th.setMaximum(100)   # 设置最大值
+        # face detection
+        self.spinbox_for_face_detection_th = QtWidgets.QSpinBox()
+        self.spinbox_for_face_detection_th.setValue(50)     # 设置当前值
+        self.spinbox_for_face_detection_th.setMinimum(0)     # 设置最小值
+        self.spinbox_for_face_detection_th.setMaximum(100)   # 设置最大值
+        self.spinbox_for_face_detection_conf = QtWidgets.QSpinBox()
+        self.spinbox_for_face_detection_conf.setValue(50)     # 设置当前值
+        self.spinbox_for_face_detection_conf.setMinimum(0)     # 设置最小值
+        self.spinbox_for_face_detection_conf.setMaximum(100)   # 设置最大值
         # ---------------------------- end ----------------------------
 
         # -------------------------- 布局 --------------------------
@@ -275,19 +300,30 @@ class ButtonWidget(QtWidgets.QWidget):
         
         # binary image
         binary_image_layout = QtWidgets.QHBoxLayout()
-        binary_image_layout.addWidget(self.checkbox_binary_image)
-        binary_image_layout.addWidget(self.spinbox_for_binary_image)
+        binary_image_layout.addWidget(self.checkbox_binary_image, 8)
+        binary_image_layout.addWidget(self.label_for_binary_image_th, 1)
+        binary_image_layout.addWidget(self.spinbox_for_binary_image, 1)
 
-        # object_detection
+        # object detection
         object_detection_layout = QtWidgets.QHBoxLayout()
-        object_detection_layout.addWidget(self.checkbox_object_detection)
-        object_detection_layout.addWidget(self.spinbox_for_object_detection)
+        object_detection_layout.addWidget(self.checkbox_object_detection, 8)
+        object_detection_layout.addWidget(self.label_for_object_detection_th, 1)
+        object_detection_layout.addWidget(self.spinbox_for_object_detection_th, 1)
+        
+        # face detection
+        face_detection_layout = QtWidgets.QHBoxLayout()
+        face_detection_layout.addWidget(self.checkbox_face_detection, 16)
+        face_detection_layout.addWidget(self.label_for_face_detection_th, 1)
+        face_detection_layout.addWidget(self.spinbox_for_face_detection_th, 1)
+        face_detection_layout.addWidget(self.label_for_face_detection_conf, 1)
+        face_detection_layout.addWidget(self.spinbox_for_face_detection_conf, 1)
 
         # global
         global_layout = QtWidgets.QVBoxLayout()
         global_layout.addSpacerItem(spacer_item)
         global_layout.addLayout(flip_vlayout, 2)
         global_layout.addWidget(self.checkbox_ocr_detection, 2)
+        global_layout.addLayout(face_detection_layout, 2)
         global_layout.addLayout(object_detection_layout, 2)
         global_layout.addLayout(binary_image_layout, 2)
         global_layout.addWidget(self.button_set_save_dir, 2)
