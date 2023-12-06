@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 
 def get_version():
-    filename = "boardcardautotest/__init__.py"
+    filename = "pcbdet/__init__.py"
     with open(filename) as f:
         match = re.search(
             r"""^__version__ = ['"]([^'"]*)['"]""", f.read(), re.M
@@ -23,7 +23,7 @@ def get_version():
 def get_install_requires():
     install_requires = [
         "imgviz>=0.11",
-        "matplotlib<3.3",  # for PyInstaller
+        "matplotlib<3.3",
         "opencv_python<4.3.0",
         "opencv_contrib_python<4.3.0",
         "numpy",
@@ -33,7 +33,9 @@ def get_install_requires():
         "termcolor",
         "requests",
         "scipy",
-        "mediapipe"
+        "pytesseract",
+        "mediapipe",
+        "pyqt5"
     ]
 
     if os.name == "nt":  # Windows
@@ -49,7 +51,7 @@ def get_long_description():
         import github2pypi
 
         return github2pypi.replace_url(
-            slug="kelamini/BoardCardAutoTest", content=long_description
+            slug="kelamini/pcbdet", content=long_description
         )
     except Exception:
         return long_description
@@ -80,7 +82,7 @@ def main():
     #     sys.exit(0)
 
     setup(
-        name="BoardCarAutoTest",
+        name="PCBDet",
         version=version,
         packages=find_packages(exclude=["github2pypi"]),
         description="Board Car Auto Test.",
@@ -88,7 +90,7 @@ def main():
         long_description_content_type="text/markdown",
         author="kelamini",
         author_email="kelamini_0216@163.com",
-        url="https://github.com/kelamini/BoardCardAutoTest",
+        url="https://github.com/kelamini/pcbdet",
         install_requires=get_install_requires(),
         license="Apache License Version 2.0",
         keywords="Image Annotation, Machine Learning",
@@ -97,16 +99,16 @@ def main():
             "Intended Audience :: Developers",
             "Natural Language :: English",
             "Programming Language :: Python",
-            "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: Implementation :: CPython",
             "Programming Language :: Python :: Implementation :: PyPy",
         ],
-        package_data={"boardcardautotest": ["icons/*", "models/*"]},
+        package_data={"pcbdet": ["icons/*", "models/*"]},
         entry_points={
             "console_scripts": [
-                "boardcardautotest=boardcardautotest.main:main",
+                "pcbdet=pcbdet.main:main",
             ],
         },
     )

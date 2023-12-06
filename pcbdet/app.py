@@ -16,7 +16,7 @@ from .utils import ocr_processor
 from .utils import object_detection, visualize_object
 from .utils import face_detection, visualize_face
 
-from boardcardautotest import __appname__
+from pcbdet import __appname__
 
 
 class EmittingStr(QtCore.QObject):

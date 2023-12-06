@@ -10,9 +10,9 @@ from qtpy import QtCore
 from qtpy import QtWidgets
 from qtpy import QtGui
 
-from boardcardautotest import __appname__
-from boardcardautotest import __version__
-from boardcardautotest.app import MainWindow
+from pcbdet import __appname__
+from pcbdet import __version__
+from pcbdet.app import MainWindow
 
 here = osp.dirname(osp.abspath(__file__))
 
