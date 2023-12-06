@@ -190,6 +190,9 @@ class MainWindow(QtWidgets.QMainWindow):
             # # 开始对捕获的图像执行 OCR 检测
             # orc_txt = ocr_processor(self.image)
             # print("===> OCR detection result: ", orc_txt)
+        else:
+            self.popwindow_opened_camera()
+            print("===> Error! Please opening Camera.")
 
     def ocr_auto_detection(self):
         if self.button_dock_Widget.buttonwidget.checkbox_ocr_detection.isChecked():
@@ -206,17 +209,28 @@ class MainWindow(QtWidgets.QMainWindow):
     def valuechange_for_binary_image(self):
         print("===> Current Value: {}\n".format(self.button_dock_Widget.buttonwidget.spinbox_for_binary_image.value()))
 
+    def popwindow_closed_camera(self):
+        QtWidgets.QMessageBox.information(self, "Error!", "Please closing Camera.",
+                                QtWidgets.QMessageBox.Yes)
+
+    def popwindow_opened_camera(self):
+        QtWidgets.QMessageBox.information(self, "Error!", "Please opening Camera.",
+                                QtWidgets.QMessageBox.Yes)
+
     def set_default_directory(self):
         if not self.cap.isOpened():
             self.save_default_dir = QtWidgets.QFileDialog.getExistingDirectory(None, "Please select directory", os.getcwd())
-            print(f"===> Set Save Directory: '{self.save_default_dir}'")
+            print(f"===> Set saved directory: '{self.save_default_dir}'")
+        else:
+            self.popwindow_closed_camera()
+            print("===> Error! Please closed Camera.")
 
-    def show_saved_error(self):
-        QtWidgets.QMessageBox.information(self, "Error!", "Not set save directory",
+    def popwindow_saved_error(self):
+        QtWidgets.QMessageBox.information(self, "Error!", "Not set save directory.",
                                 QtWidgets.QMessageBox.Yes)
     
-    def show_saved_succeed(self, message):
-        QtWidgets.QMessageBox.information(self, "Successful!", f"saved to: '{message}'",
+    def popwindow_saved_succeed(self, message):
+        QtWidgets.QMessageBox.information(self, "Successful!", f"Image saved to: '{message}'",
                                 QtWidgets.QMessageBox.Yes)
 
     def save_image(self):
@@ -224,11 +238,12 @@ class MainWindow(QtWidgets.QMainWindow):
             filename = "_".join([datetime.datetime.now().strftime("%Y%m%d%H%M%S"), str(datetime.datetime.now().timestamp())])+'.jpg'
             save_path = osp.join(self.save_default_dir, filename)
             cv.imwrite(save_path, self.post_image)
-            self.show_saved_succeed(save_path)
-            print(f"Save Image to: '{save_path}'")
+            
+            self.popwindow_saved_succeed(save_path)
+            print(f"===> Image saved to: '{save_path}'")
         else:
-            self.show_saved_error()
-            print("===> Save Error: Please select default save directory.")
+            self.popwindow_saved_error()
+            print("===> Error! Please select default saved directory.")
 
     def draw_rectangle(self):
         print("===> Draw Rectangle...\n")
