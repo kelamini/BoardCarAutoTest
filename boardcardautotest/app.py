@@ -211,13 +211,23 @@ class MainWindow(QtWidgets.QMainWindow):
             self.save_default_dir = QtWidgets.QFileDialog.getExistingDirectory(None, "Please select directory", os.getcwd())
             print(f"===> Set Save Directory: '{self.save_default_dir}'")
 
+    def show_saved_error(self):
+        QtWidgets.QMessageBox.information(self, "Error!", "Not set save directory",
+                                QtWidgets.QMessageBox.Yes)
+    
+    def show_saved_succeed(self, message):
+        QtWidgets.QMessageBox.information(self, "Successful!", f"saved to: '{message}'",
+                                QtWidgets.QMessageBox.Yes)
+
     def save_image(self):
         if self.save_default_dir:
             filename = "_".join([datetime.datetime.now().strftime("%Y%m%d%H%M%S"), str(datetime.datetime.now().timestamp())])+'.jpg'
             save_path = osp.join(self.save_default_dir, filename)
             cv.imwrite(save_path, self.post_image)
+            self.show_saved_succeed(save_path)
             print(f"Save Image to: '{save_path}'")
         else:
+            self.show_saved_error()
             print("===> Save Error: Please select default save directory.")
 
     def draw_rectangle(self):
