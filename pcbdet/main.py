@@ -8,17 +8,11 @@ import yaml
 
 from qtpy import QtCore
 from qtpy import QtWidgets
-from qtpy import QtGui
 
+from .utils import newIcon
 from pcbdet import __appname__
 from pcbdet import __version__
 from pcbdet.app import MainWindow
-
-here = osp.dirname(osp.abspath(__file__))
-
-def newIcon(icon):
-    icons_dir = osp.join(here, "./icons")
-    return QtGui.QIcon(osp.join(":/", icons_dir, "%s.png" % icon))
 
 
 def main():
