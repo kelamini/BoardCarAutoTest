@@ -40,9 +40,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.image = None
         self.post_image = None
         self.post_qimage = None
+        self.capture_image = None
         self.save_default_dir = None
         self.cap = cv.VideoCapture()  # 视频流
-        self.CAM_NUM = 0    # 相机设备编号
+        self.CAM_NUM = 2    # 相机设备编号
 
 
         # ----------------------- 菜单栏 -----------------------
@@ -184,6 +185,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def capture_image_clicked(self):
         if self.cap.isOpened():
+            self.capture_image = deepcopy(self.post_image)
             self.show_image_dialog.show_image_widget.setPixmap(QtGui.QPixmap.fromImage(self.post_qimage))
             self.show_image_dialog.show()
             print("===> Capture Image...\n")
@@ -237,7 +239,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.save_default_dir:
             filename = "_".join([datetime.datetime.now().strftime("%Y%m%d%H%M%S"), str(datetime.datetime.now().timestamp())])+'.jpg'
             save_path = osp.join(self.save_default_dir, filename)
-            cv.imwrite(save_path, self.post_image)
+            cv.imwrite(save_path, self.capture_image)
             
             self.popwindow_saved_succeed(save_path)
             print(f"===> Image saved to: '{save_path}'")
