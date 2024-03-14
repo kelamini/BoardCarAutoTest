@@ -129,10 +129,10 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
 
-        self.image = None
-        self.post_image = None
-        self.post_qimage = None
-        self.capture_image = None
+        self.image = None           # 从相机读取到的图像
+        self.post_image = None      # 原图像经预处理后的图像
+        self.post_qimage = None     # qt 格式的图像
+        self.capture_image = None   # 捕获的图像
         self.save_default_dir = None
         self.cap = cv.VideoCapture()  # 视频流
         self.CAM_NUM = 0
@@ -140,6 +140,11 @@ class MainWindow(QtWidgets.QMainWindow):
         if len(camera_devices) != 0:
             self.CAM_NUM = int(camera_devices[0][0])    # 相机设备编号
         self.detect_mode = True
+
+        # ----------------------- 数据库 -----------------------
+        self.defect_database = PcbdetDataBase()
+        self.defect_database.init_defect_table()
+        # ----------------------- end -----------------------
 
         # ----------------------- 菜单栏 -----------------------
         menubar = self.menuBar()
@@ -200,7 +205,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # ----------------------- end -----------------------
 
     def open_database_clicked(self):
-        self.database = DatabaseWidget()
+        all_data = self.defect_database.fetch_all_data()
+        table_name = self.defect_database.obt_table_name()
+        self.database = DatabaseWidget(all_data, table_name)
         self.database.show()
         print(f"[{current_time}] 已打开数据库")
 
@@ -759,14 +766,10 @@ class ShowImageDialog(QtWidgets.QDialog):
 
 
 class DatabaseWidget(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, all_data, table_name):
         super(DatabaseWidget, self).__init__()
         self.setWindowTitle("数据库")
         self.setMinimumSize(640, 480)
-        defect_database = PcbdetDataBase()
-        defect_database.init_defect_table()
-        all_data = defect_database.fetch_all_data()
-        table_name = defect_database.obt_table_name()
 
         # table widget
         raw_count = len(all_data)

@@ -19,3 +19,7 @@ python setup.py install     # or pip install -v -e .
 ```bash
 pcbdet
 ```
+
+
+- 初始账户
+    - admin: admin@1234
