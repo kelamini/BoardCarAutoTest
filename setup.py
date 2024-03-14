@@ -23,9 +23,9 @@ def get_version():
 def get_install_requires():
     install_requires = [
         "imgviz>=0.11",
-        "matplotlib<3.3",
         "opencv_python<4.3.0",
         "opencv_contrib_python<4.3.0",
+        "pycameralist",
         "numpy",
         "Pillow>=2.8",
         "PyYAML",
