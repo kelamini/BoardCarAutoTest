@@ -23,13 +23,12 @@ from pcbdet import __appname__
 
 current_time = time.strftime('%Y-%m-%d %H:%M:%S')
 
-class LoginDialog(QtWidgets.QDialog):
+class SigninDialog(QtWidgets.QDialog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setWindowTitle('欢迎使用 PCB 缺陷检测系统')
         self.resize(300, 200)
         self.setFixedSize(self.width(), self.height())
-        self.setWindowFlags(Qt.WindowCloseButtonHint)  # 设置隐藏关闭X的按钮
 
         # 加载数据库，初始化用户表
         self.pcbdet_database = PcbdetDataBase()
@@ -82,8 +81,8 @@ class LoginDialog(QtWidgets.QDialog):
 
         # 绑定按钮事件
         self.button_signin.clicked.connect(self.button_sign_in_verify)
-        self.button_quit.clicked.connect(
-            QtCore.QCoreApplication.instance().quit)  # 返回按钮绑定到退出
+        self.button_signup.clicked.connect(self.button_sign_up)
+        self.button_quit.clicked.connect(QtCore.QCoreApplication.instance().quit)  # 返回按钮绑定到退出
 
     # 点击登录按钮校验信息
     def button_sign_in_verify(self):
@@ -107,8 +106,58 @@ class LoginDialog(QtWidgets.QDialog):
         print(f"[{current_time}] 登录成功！")
         self.pcbdet_database.close_user_table()
 
+    def button_sign_up(self):
+        self.close()
+
     # def popwindow_sign_in_error(self, info):
     #     QtWidgets.QMessageBox.information(self, info, QtWidgets.QMessageBox.Yes)
+
+class SignupDialog(QtWidgets.QDialog):
+    def __init__(self):
+        super(SignupDialog, self).__init__()
+        self.setWindowTitle("注册")
+        self.resize(400, 600)
+        self.setFixedSize(self.width(), self.height())
+
+        # button
+        self.button_signup = QtWidgets.QPushButton("注册")
+        self.button_quit = QtWidgets.QPushButton("退出")
+
+        # label
+        self.label_for_account = QtWidgets.QLabel("昵称：")
+        self.label_for_password = QtWidgets.QLabel("密码：")
+
+
+        # line edit
+        self.linedit_account = QtWidgets.QLineEdit()
+        self.linedit_password = QtWidgets.QLineEdit()
+
+
+        # 布局
+        account_layout = QtWidgets.QHBoxLayout()
+        account_layout.addWidget(self.label_for_account)
+        account_layout.addWidget(self.linedit_account)
+
+        password_layout = QtWidgets.QHBoxLayout()
+        password_layout.addWidget(self.label_for_password)
+        password_layout.addWidget(self.linedit_password)
+
+        button_layout = QtWidgets.QHBoxLayout()
+        button_layout.addWidget(self.button_signup)
+        button_layout.addWidget(self.button_quit)
+
+        global_layout = QtWidgets.QVBoxLayout()
+        global_layout.addLayout(account_layout)
+        global_layout.addLayout(password_layout)
+        global_layout.addLayout(button_layout)
+
+        self.setLayout(global_layout)
+
+        self.button_signup.clicked.connect(self.button_signup_verify)
+        self.button_quit.clicked.connect(QtCore.QCoreApplication.instance().quit)  # 返回按钮绑定到退出
+
+    def button_signup_verify(self):
+        self.accept()
 
 
 class EmittingStr(QtCore.QObject):
@@ -363,11 +412,11 @@ class MainWindow(QtWidgets.QMainWindow):
         print(f"[{current_time}] 当前阈值: {self.button_dock_Widget.buttonwidget.spinbox_for_binary_image.value()}")
 
     def popwindow_closed_camera(self):
-        QtWidgets.QMessageBox.information(self, "Error!", "Please closing Camera.",
+        QtWidgets.QMessageBox.information(self, "错误!", "请关闭相机",
                                 QtWidgets.QMessageBox.Yes)
 
     def popwindow_opened_camera(self):
-        QtWidgets.QMessageBox.information(self, "Error!", "Please opening Camera.",
+        QtWidgets.QMessageBox.information(self, "错误!", "请打开相机",
                                 QtWidgets.QMessageBox.Yes)
 
     def set_default_directory(self):
@@ -379,11 +428,11 @@ class MainWindow(QtWidgets.QMainWindow):
             print(f"[{current_time}] 错误! 请关闭相机")
 
     def popwindow_saved_error(self):
-        QtWidgets.QMessageBox.information(self, "Error!", "Not set save directory.",
+        QtWidgets.QMessageBox.information(self, "错误!", "没有设置图像保存路径",
                                 QtWidgets.QMessageBox.Yes)
     
     def popwindow_saved_succeed(self, message):
-        QtWidgets.QMessageBox.information(self, "Successful!", f"Image saved to: '{message}'",
+        QtWidgets.QMessageBox.information(self, "成功!", f"图像保存到: '{message}'",
                                 QtWidgets.QMessageBox.Yes)
 
     def save_image(self):
