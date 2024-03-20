@@ -116,7 +116,7 @@ class SignupDialog(QtWidgets.QDialog):
     def __init__(self):
         super(SignupDialog, self).__init__()
         self.setWindowTitle("注册")
-        self.resize(400, 600)
+        self.resize(200, 200)
         self.setFixedSize(self.width(), self.height())
 
         # button
@@ -126,11 +126,24 @@ class SignupDialog(QtWidgets.QDialog):
         # label
         self.label_for_account = QtWidgets.QLabel("昵称：")
         self.label_for_password = QtWidgets.QLabel("密码：")
+        self.label_for_truename = QtWidgets.QLabel("姓名：")
+        self.label_for_sex = QtWidgets.QLabel("性别：")
+        self.label_for_age = QtWidgets.QLabel("年龄：")
+        self.label_for_phone = QtWidgets.QLabel("电话：")
 
+        # combo box
+        self.combobox_for_sex = QtWidgets.QComboBox()
+        for sex in ["男", "女"]:
+            self.combobox_for_sex.addItem(sex)
 
         # line edit
         self.linedit_account = QtWidgets.QLineEdit()
         self.linedit_password = QtWidgets.QLineEdit()
+        self.linedit_password.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.linedit_truename = QtWidgets.QLineEdit()
+        self.linedit_age = QtWidgets.QLineEdit()
+        self.linedit_phone = QtWidgets.QLineEdit()
+
 
 
         # 布局
@@ -142,6 +155,22 @@ class SignupDialog(QtWidgets.QDialog):
         password_layout.addWidget(self.label_for_password)
         password_layout.addWidget(self.linedit_password)
 
+        truename_layout = QtWidgets.QHBoxLayout()
+        truename_layout.addWidget(self.label_for_truename)
+        truename_layout.addWidget(self.linedit_truename)
+
+        sex_layout = QtWidgets.QHBoxLayout()
+        sex_layout.addWidget(self.label_for_sex)
+        sex_layout.addWidget(self.combobox_for_sex)
+
+        age_layout = QtWidgets.QHBoxLayout()
+        age_layout.addWidget(self.label_for_age)
+        age_layout.addWidget(self.linedit_age)
+
+        phone_layout = QtWidgets.QHBoxLayout()
+        phone_layout.addWidget(self.label_for_phone)
+        phone_layout.addWidget(self.linedit_phone)
+
         button_layout = QtWidgets.QHBoxLayout()
         button_layout.addWidget(self.button_signup)
         button_layout.addWidget(self.button_quit)
@@ -149,6 +178,11 @@ class SignupDialog(QtWidgets.QDialog):
         global_layout = QtWidgets.QVBoxLayout()
         global_layout.addLayout(account_layout)
         global_layout.addLayout(password_layout)
+        global_layout.addLayout(truename_layout)
+        global_layout.addLayout(sex_layout)
+        global_layout.addLayout(age_layout)
+        global_layout.addLayout(phone_layout)
+
         global_layout.addLayout(button_layout)
 
         self.setLayout(global_layout)
@@ -233,7 +267,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.button_dock_Widget)
         self.button_dock_Widget.buttonwidget.button_open_camera.clicked.connect(self.open_camera_clicked)
         self.button_dock_Widget.buttonwidget.button_capture_image.clicked.connect(self.capture_image_clicked)
-        # self.button_dock_Widget.buttonwidget.checkbox_ocr_detection.clicked.connect(self.ocr_auto_detection)
+        self.button_dock_Widget.buttonwidget.checkbox_ocr_detection.clicked.connect(self.ocr_auto_detection)
         self.button_dock_Widget.buttonwidget.checkbox_binary_image.clicked.connect(self.show_binary_image)
         self.button_dock_Widget.buttonwidget.spinbox_for_binary_image.valueChanged.connect(self.valuechange_for_binary_image)
         self.button_dock_Widget.buttonwidget.button_set_save_dir.clicked.connect(self.set_default_directory)
@@ -241,7 +275,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.button_dock_Widget.buttonwidget.button_open_database.clicked.connect(self.open_database_clicked)
         self.button_dock_Widget.buttonwidget.button_detect_begin.clicked.connect(self.detect_clicked)
         self.button_dock_Widget.buttonwidget.combobox_for_detect.currentIndexChanged.connect(self.set_detect_mode)
-        self.button_dock_Widget.buttonwidget.combobox_for_load_model.currentIndexChanged.connect(self.set_delect_model)
+        self.button_dock_Widget.buttonwidget.combobox_for_load_model.currentIndexChanged.connect(self.set_detect_model)
 
         self.show_image_dialog.button_save_image.clicked.connect(self.save_image)
         self.show_image_dialog.button_draw_rectangle.clicked.connect(self.draw_rectangle)
@@ -284,7 +318,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.detect_mode = False
             self.button_dock_Widget.buttonwidget.button_detect_begin.setText('单次检测')
 
-    def set_delect_model(self, text):
+    def set_detect_model(self, text):
         model_name = self.button_dock_Widget.buttonwidget.combobox_for_load_model.currentText()
         print(f"[{current_time}] 当前选择的模型是：{model_name}")
 
@@ -331,18 +365,18 @@ class MainWindow(QtWidgets.QMainWindow):
         _, self.image = self.cap.read()
         self.post_image = deepcopy(self.image)
 
-        # # 执行目标检测
-        # if self.button_dock_Widget.buttonwidget.checkbox_object_detection.isChecked():
-        #     th = self.button_dock_Widget.buttonwidget.spinbox_for_object_detection_th.value()
-        #     detection_result = object_detection(self.image, th)
-        #     self.post_image = visualize_object(self.post_image, detection_result)
+        # 执行目标检测
+        if self.button_dock_Widget.buttonwidget.checkbox_object_detection.isChecked():
+            th = self.button_dock_Widget.buttonwidget.spinbox_for_object_detection_th.value()
+            detection_result = object_detection(self.image, th)
+            self.post_image = visualize_object(self.post_image, detection_result)
 
-        # # 执行人脸检测
-        # if self.button_dock_Widget.buttonwidget.checkbox_face_detection.isChecked():
-        #     conf = self.button_dock_Widget.buttonwidget.spinbox_for_face_detection_conf.value()
-        #     th = self.button_dock_Widget.buttonwidget.spinbox_for_face_detection_th.value()
-        #     detection_result = face_detection(self.image, conf, th)
-        #     self.post_image = visualize_face(self.post_image, detection_result)
+        # 执行人脸检测
+        if self.button_dock_Widget.buttonwidget.checkbox_face_detection.isChecked():
+            conf = self.button_dock_Widget.buttonwidget.spinbox_for_face_detection_conf.value()
+            th = self.button_dock_Widget.buttonwidget.spinbox_for_face_detection_th.value()
+            detection_result = face_detection(self.image, conf, th)
+            self.post_image = visualize_face(self.post_image, detection_result)
 
         # 翻转图像
         if self.button_dock_Widget.buttonwidget.button_original_image.isChecked():
@@ -375,11 +409,11 @@ class MainWindow(QtWidgets.QMainWindow):
             QtGui.QPixmap.fromImage(self.post_qimage).scaled(
                 int(self.image.shape[1]*scale), int(self.image.shape[0]*scale)))
         
-        # # 执行 OCR 检测
-        # if self.button_dock_Widget.buttonwidget.checkbox_ocr_detection.isChecked():
-        #     orc_txt = ocr_processor(self.image)
-        #     if orc_txt.rstrip():
-        #         print("===> OCR detection result: \n", orc_txt)
+        # 执行 OCR 检测
+        if self.button_dock_Widget.buttonwidget.checkbox_ocr_detection.isChecked():
+            orc_txt = ocr_processor(self.image)
+            if orc_txt.rstrip():
+                print("===> OCR detection result: \n", orc_txt)
 
 
     def capture_image_clicked(self):
@@ -388,9 +422,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.show_image_dialog.show_image_widget.setPixmap(QtGui.QPixmap.fromImage(self.post_qimage))
             self.show_image_dialog.show()
             print(f"[{current_time}] 已捕获图像")
-            # # 开始对捕获的图像执行 OCR 检测
-            # orc_txt = ocr_processor(self.image)
-            # print("===> OCR detection result: ", orc_txt)
         else:
             self.popwindow_opened_camera()
             print(f"[{current_time}] 错误! 请打开相机")
@@ -459,18 +490,18 @@ class ButtonWidget(QtWidgets.QWidget):
         spacer_item = QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
 
         # label
-        self.label_for_binary_image_th = QtWidgets.QLabel("阈值: ", self)
-        # self.label_for_object_detection_th = QtWidgets.QLabel("Th: ", self)
-        # self.label_for_face_detection_conf = QtWidgets.QLabel("Conf: ", self)
-        # self.label_for_face_detection_th = QtWidgets.QLabel("Th: ", self)
-        self.label_for_exposure_mode = QtWidgets.QLabel("曝光模式: ", self)
-        self.label_for_exposure_time = QtWidgets.QLabel("曝光时间: ", self)
-        self.label_for_camera_gain = QtWidgets.QLabel("相机增益: ", self)
-        self.label_for_brightness = QtWidgets.QLabel("光源亮度: ", self)
-        self.label_for_serial_port = QtWidgets.QLabel("串口号: ", self)
-        self.label_for_baud_rate = QtWidgets.QLabel("波特率: ", self)
-        self.label_for_load_model = QtWidgets.QLabel("选择模型: ", self)
-        self.label_for_camera_devices = QtWidgets.QLabel("选择相机: ", self)
+        self.label_for_binary_image_th = QtWidgets.QLabel("阈值：", self)
+        self.label_for_object_detection_th = QtWidgets.QLabel("阈值：", self)
+        self.label_for_face_detection_conf = QtWidgets.QLabel("置信度：", self)
+        self.label_for_face_detection_th = QtWidgets.QLabel("阈值：", self)
+        self.label_for_exposure_mode = QtWidgets.QLabel("曝光模式：", self)
+        self.label_for_exposure_time = QtWidgets.QLabel("曝光时间：", self)
+        self.label_for_camera_gain = QtWidgets.QLabel("相机增益：", self)
+        self.label_for_brightness = QtWidgets.QLabel("光源亮度：", self)
+        self.label_for_serial_port = QtWidgets.QLabel("串口号：", self)
+        self.label_for_baud_rate = QtWidgets.QLabel("波特率：", self)
+        self.label_for_load_model = QtWidgets.QLabel("选择模型：", self)
+        self.label_for_camera_devices = QtWidgets.QLabel("选择相机：", self)
 
 
 
@@ -490,10 +521,10 @@ class ButtonWidget(QtWidgets.QWidget):
         self.button_hv_image = QtWidgets.QRadioButton("完全翻转", self)
 
         # check box
-        # self.checkbox_ocr_detection = QtWidgets.QCheckBox("OCR Auto Detection", self)
+        self.checkbox_ocr_detection = QtWidgets.QCheckBox("OCR 文字识别", self)
         self.checkbox_binary_image = QtWidgets.QCheckBox("切换二值图像", self)
-        # self.checkbox_object_detection = QtWidgets.QCheckBox("Object Detection", self)
-        # self.checkbox_face_detection = QtWidgets.QCheckBox("Face Detection", self)
+        self.checkbox_object_detection = QtWidgets.QCheckBox("辅助目标检测", self)
+        self.checkbox_face_detection = QtWidgets.QCheckBox("人脸检测", self)
 
         # combo box
         self.combobox_for_exposure_mode = QtWidgets.QComboBox()
@@ -525,6 +556,7 @@ class ButtonWidget(QtWidgets.QWidget):
         # self.slider_for_binary_image.setValue(127)   # 设置初始值
         # self.slider_for_binary_image.setTickPosition(QtWidgets.QSlider.TicksBelow)  # 设置刻度的位置， 刻度在下方
         # self.slider_for_binary_image.setTickInterval(5) # 设置刻度的间隔
+        
         self.slider_for_brightness = QtWidgets.QSlider(Qt.Horizontal)
         self.slider_for_brightness.setMinimum(0) # 设置最小值
         self.slider_for_brightness.setMaximum(100) # 设置最大值
@@ -589,19 +621,19 @@ class ButtonWidget(QtWidgets.QWidget):
         camera_devices_layout.addWidget(self.label_for_camera_devices)
         camera_devices_layout.addWidget(self.combobox_for_camera_devices)
 
-        # # object detection
-        # object_detection_layout = QtWidgets.QHBoxLayout()
-        # object_detection_layout.addWidget(self.checkbox_object_detection, 8)
-        # object_detection_layout.addWidget(self.label_for_object_detection_th, 1)
-        # object_detection_layout.addWidget(self.spinbox_for_object_detection_th, 1)
+        # object detection
+        object_detection_layout = QtWidgets.QHBoxLayout()
+        object_detection_layout.addWidget(self.checkbox_object_detection, 8)
+        object_detection_layout.addWidget(self.label_for_object_detection_th, 1)
+        object_detection_layout.addWidget(self.spinbox_for_object_detection_th, 1)
         
-        # # face detection
-        # face_detection_layout = QtWidgets.QHBoxLayout()
-        # face_detection_layout.addWidget(self.checkbox_face_detection, 16)
-        # face_detection_layout.addWidget(self.label_for_face_detection_th, 1)
-        # face_detection_layout.addWidget(self.spinbox_for_face_detection_th, 1)
-        # face_detection_layout.addWidget(self.label_for_face_detection_conf, 1)
-        # face_detection_layout.addWidget(self.spinbox_for_face_detection_conf, 1)
+        # face detection
+        face_detection_layout = QtWidgets.QHBoxLayout()
+        face_detection_layout.addWidget(self.checkbox_face_detection, 16)
+        face_detection_layout.addWidget(self.label_for_face_detection_th, 1)
+        face_detection_layout.addWidget(self.spinbox_for_face_detection_th, 1)
+        face_detection_layout.addWidget(self.label_for_face_detection_conf, 1)
+        face_detection_layout.addWidget(self.spinbox_for_face_detection_conf, 1)
 
         # serial port
         serial_port_layout = QtWidgets.QHBoxLayout()
@@ -664,12 +696,21 @@ class ButtonWidget(QtWidgets.QWidget):
         function_group = QtWidgets.QGroupBox("功能区")
         function_group.setLayout(function_vlayout)
 
+        # 额外功能区
+        extra_function_vlayout = QtWidgets.QVBoxLayout()
+        extra_function_vlayout.addWidget(self.checkbox_ocr_detection)
+        extra_function_vlayout.addLayout(face_detection_layout)
+        extra_function_vlayout.addLayout(object_detection_layout)
+        extra_function_group = QtWidgets.QGroupBox("额外功能区")
+        extra_function_group.setLayout(extra_function_vlayout)
+
         # global
         global_layout = QtWidgets.QVBoxLayout()
         # global_layout.addSpacerItem(spacer_item)
         global_layout.addWidget(serial_port_group)
         global_layout.addWidget(camera_group)
         global_layout.addWidget(function_group)
+        global_layout.addWidget(extra_function_group)
 
         self.setLayout(global_layout)
 
