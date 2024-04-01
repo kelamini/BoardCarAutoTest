@@ -4,6 +4,7 @@ from pathlib import Path
 import sqlite3
 import time
 import datetime
+import random
 
 class PcbdetDataBase:
     def __init__(self):
@@ -48,6 +49,24 @@ class PcbdetDataBase:
                              DefectCoordRightDownY    FLOAT NOT NULL, \
                              DefectConf               FLOAT NOT NULL)"
         self.pcbdet_cursor.execute(defect_info_table)
+        fetch_pcbdet = self.pcbdet_cursor.execute(F"SELECT * FROM defect_info WHERE DefectID==1").fetchall()
+        if len(fetch_pcbdet) == 0:
+            m = 0
+            for i in range(20):
+                t = time.strftime('%Y-%m-%d/%H:%M:%S')
+                det_type = ['missing_hole', 'mouse_bite', 'open_circuit', 'short', 'spur', 'spurious_copper'][random.randint(0, 5)]
+                from_img = f"data/{str(m).zfill(6)}.jpg"
+                if i % 3:
+                    m = i
+                    from_img = f"data/{str(i).zfill(6)}.jpg"
+                img_h, img_w = 1586, 3034
+                det_ltx, det_lty = random.randint(158, 1400), random.randint(158, 1400)
+                det_rdx, det_rdy = random.randint(158, 1400), random.randint(158, 1400)
+                det_conf = random.randint(0, 100) / 100
+
+                pcbdet_info = f"{i+1}, '{t}', '{det_type}', '{from_img}', {img_h}, {img_w}, {float(det_ltx)}, {float(det_lty)}, {float(det_rdx)}, {float(det_rdy)}, {det_conf}"
+                self.pcbdet_cursor.execute("INSERT INTO defect_info VALUES (%s)"%pcbdet_info)
+            self.pcbdet_info.commit()
 
     def insert_one_data_to_defect(self, data: dict):
         fetch_data = self.pcbdet_cursor.execute(f"SELECT * FROM defect_info").fetchall()

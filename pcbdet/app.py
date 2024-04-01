@@ -353,6 +353,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.timer_camera.start(30)  # 定时器开始计时 30ms，结果是每过 30ms 从摄像头中取一帧显示
                 self.button_dock_Widget.buttonwidget.button_open_camera.setText('关闭相机')
                 print(f"[{current_time}] 已打开相机")
+                # print(f"[{current_time}] 自动模式")
+                # print(f"[{current_time}] 开始检测")
+
+
         else:
             self.timer_camera.stop()  # 关闭定时器
             self.cap.release()  # 释放视频流
@@ -498,8 +502,8 @@ class ButtonWidget(QtWidgets.QWidget):
         self.label_for_exposure_time = QtWidgets.QLabel("曝光时间：", self)
         self.label_for_camera_gain = QtWidgets.QLabel("相机增益：", self)
         self.label_for_brightness = QtWidgets.QLabel("光源亮度：", self)
-        self.label_for_serial_port = QtWidgets.QLabel("串口号：", self)
-        self.label_for_baud_rate = QtWidgets.QLabel("波特率：", self)
+        self.label_for_wifi = QtWidgets.QLabel("WIFI 设备：", self)
+        self.label_for_wifi_passwd = QtWidgets.QLabel("密码：", self)
         self.label_for_load_model = QtWidgets.QLabel("选择模型：", self)
         self.label_for_camera_devices = QtWidgets.QLabel("选择相机：", self)
 
@@ -509,7 +513,8 @@ class ButtonWidget(QtWidgets.QWidget):
         self.button_open_camera = QtWidgets.QPushButton("打开相机", self)
         self.button_capture_image = QtWidgets.QPushButton("捕获图像", self)
         self.button_set_save_dir = QtWidgets.QPushButton("设置保存图像路径", self)
-        self.button_set_serial_port = QtWidgets.QPushButton("扫描串口", self)
+        self.button_set_wifi_open = QtWidgets.QPushButton("连接", self)
+        self.button_set_wifi_close = QtWidgets.QPushButton("断开", self)
         self.button_detect_begin = QtWidgets.QPushButton("开始检测", self)
         self.button_open_database = QtWidgets.QPushButton("打开数据库", self)
 
@@ -527,6 +532,9 @@ class ButtonWidget(QtWidgets.QWidget):
         self.checkbox_face_detection = QtWidgets.QCheckBox("人脸检测", self)
 
         # combo box
+        self.combobox_for_wifi = QtWidgets.QComboBox()
+        for wifi_name in ["pcbdet", "小张PROMAX", "ribls", "vivo"]:
+            self.combobox_for_wifi.addItem(wifi_name)
         self.combobox_for_exposure_mode = QtWidgets.QComboBox()
         self.combobox_for_exposure_mode.addItem("自动")
         self.combobox_for_exposure_mode.addItem("手动")
@@ -545,8 +553,8 @@ class ButtonWidget(QtWidgets.QWidget):
         # line edit
         self.linedit_for_exposure_time = QtWidgets.QLineEdit()
         self.linedit_for_camera_gain = QtWidgets.QLineEdit("3")
-        self.linedit_for_serial_port = QtWidgets.QLineEdit()
-        self.linedit_for_baud_rate = QtWidgets.QLineEdit()
+        self.linedit_for_wifi_passwd = QtWidgets.QLineEdit()
+        self.linedit_for_wifi_passwd.setEchoMode(QtWidgets.QLineEdit.Password)
 
         # # slider
         # self.slider_for_binary_image = QtWidgets.QSlider(Qt.Horizontal)
@@ -635,23 +643,28 @@ class ButtonWidget(QtWidgets.QWidget):
         face_detection_layout.addWidget(self.label_for_face_detection_conf, 1)
         face_detection_layout.addWidget(self.spinbox_for_face_detection_conf, 1)
 
-        # serial port
-        serial_port_layout = QtWidgets.QHBoxLayout()
-        serial_port_layout.addWidget(self.label_for_serial_port)
-        serial_port_layout.addWidget(self.linedit_for_serial_port)
+        # wifi
+        wifi_layout = QtWidgets.QHBoxLayout()
+        wifi_layout.addWidget(self.label_for_wifi)
+        wifi_layout.addWidget(self.combobox_for_wifi)
 
-        # baud rate
-        baud_rate_layout = QtWidgets.QHBoxLayout()
-        baud_rate_layout.addWidget(self.label_for_baud_rate)
-        baud_rate_layout.addWidget(self.linedit_for_baud_rate)
+        # wifi status
+        wifi_status_layout = QtWidgets.QHBoxLayout()
+        wifi_status_layout.addWidget(self.button_set_wifi_open)
+        wifi_status_layout.addWidget(self.button_set_wifi_close)
 
-        # 串口配置
-        serial_port_vlayout = QtWidgets.QVBoxLayout()
-        serial_port_vlayout.addLayout(serial_port_layout)
-        serial_port_vlayout.addLayout(baud_rate_layout)
-        serial_port_vlayout.addWidget(self.button_set_serial_port)
-        serial_port_group = QtWidgets.QGroupBox("串口配置区")
-        serial_port_group.setLayout(serial_port_vlayout)
+        # wifi passwd
+        wifi_passwd_layout = QtWidgets.QHBoxLayout()
+        wifi_passwd_layout.addWidget(self.label_for_wifi_passwd)
+        wifi_passwd_layout.addWidget(self.linedit_for_wifi_passwd)
+
+        # WIFI 配置
+        wifi_vlayout = QtWidgets.QVBoxLayout()
+        wifi_vlayout.addLayout(wifi_layout)
+        wifi_vlayout.addLayout(wifi_passwd_layout)
+        wifi_vlayout.addLayout(wifi_status_layout)
+        wifi_group = QtWidgets.QGroupBox("WIFI 配置区")
+        wifi_group.setLayout(wifi_vlayout)
 
         # exposure mode
         exposure_mode_layout = QtWidgets.QHBoxLayout()
@@ -707,7 +720,7 @@ class ButtonWidget(QtWidgets.QWidget):
         # global
         global_layout = QtWidgets.QVBoxLayout()
         # global_layout.addSpacerItem(spacer_item)
-        global_layout.addWidget(serial_port_group)
+        global_layout.addWidget(wifi_group)
         global_layout.addWidget(camera_group)
         global_layout.addWidget(function_group)
         global_layout.addWidget(extra_function_group)
